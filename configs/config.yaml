@@ -1,0 +1,57 @@
+---
+data:
+  mpii:
+    raw: /home/jqin/wk/Datasets/MPIIFaceGaze
+    obj: <path>/objs_3ddfa_mpii
+  xgaze:
+    raw: /media/jqin/disk3/GAZE_datasets/XGaze_RAW_cam00 
+    obj: <path>/objs_3ddfa_xgaze
+
+  background_path: <path>/val_256
+
+supplementary:
+  mpii: 
+    source: supplementary/mpii/source_supply
+    whether_dark: supplementary/mpii/random_bg_ids.txt
+    random_lightings_ac: supplementary/mpii/random_lightings_ac.txt
+    random_colors: supplementary/mpii/random_colors.txt
+    random_bg_ids: supplementary/mpii/random_bg_ids.txt
+    which_ids: supplementary/mpii/which_ids.txt
+
+misc:
+  mpii_face_model: ./data/face_model.yml
+  face_model_path: ./data/face_model.txt
+  dlib_landmark_model: data/shape_predictor_68_face_landmarks.dat
+  openface_path: ./data/OpenFace.txt
+
+model:
+  save_original_headpose: False
+  ## mpii --> xgaze
+  target_pose:
+    number_new_views: 16
+    mode: 'xgaze-train'
+    headpose_file: ./targets/hp_train.npy
+
+ 
+  ## mpii --> eyediap cs
+
+  # target_pose:
+  #   number_new_views: 16
+  #   mode: 'eyediap-cs'
+  #   headpose_file: ./targets/EYEDIAP_CS_head_distribution.txt
+
+  ## mpii --> eyediap ft
+
+  # target_pose:
+  #   number_new_views: 16
+  #   mode: 'eyediap-ft'
+  #   headpose_file: ./targets/EYEDIAP_FT_head_distribution.txt
+
+
+  ## mpii / xgaze --> gaussian
+  
+  # target_pose:
+  #   number_new_views: 1
+  #   mode: 'gaussian'
+  #   sample_target_gaze: True
+  #   sigma: 20

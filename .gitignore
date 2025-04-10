@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+
+
+# Pyre type checker
+.pyre/
+
+# obj mesh files
+*/obj/
+*.obj
+*.mat
+*.dat
+*.h5
+*.sh
+# */original/*.jpg
+examples/*
+todelete/
+temp_output/
+testcode/
+# /dummy
+
+
+.DS_Store
+
+dump_0628/
+
+simple_xgaze.py
+rendering.py
+random_factor.py
+
+supplementary/GazeCapture_v1
+
+supplementary/
+
+*.pth.tar
