@@ -34,24 +34,6 @@ import h5py
 
 STD_SIZE = 120
 
-def read_lm_gc(csv_path, index):
-    with open(csv_path, newline='') as csvfile:
-        data = csvfile.readlines()
-
-    reader = csv.reader(data)
-    subject = {}
-    for row in reader:
-        frame = row[0]
-        cam_index = row[1]
-        subject[frame+'/'+cam_index] = row[2:]
-
-
-    gaze_point_screen = [int(float(i)) for i in subject[index][0:2]]
-    gaze_point_cam = [float(i) for i in subject[index][2:5]]
-    head_rotation_cam = [float(i) for i in subject[index][5:8]]
-    head_translation_cam = [float(i) for i in subject[index][8:11]]
-    lm_2d = np.array([float(i) for i in subject[index][11:]]).reshape(68,2)
-    return lm_2d
 
 
 def main(args):
@@ -86,15 +68,8 @@ def main(args):
     
     input_path = args.files
     output_path = args.output_path
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    # # make a specific folder for cropped size obj and lm
-    # crop_path = os.path.join(output_path,'obj')
-    # if not os.path.exists(crop_path):
-    #     os.makedirs(crop_path)
-
-
+    os.makedirs(output_path, exist_ok=True)
+    
     img_list = glob.glob(input_path + '/' + '*.png')
     img_list += glob.glob(input_path + '/' + '*.jpg')
     img_list += glob.glob(input_path + '/' + '*.JPG')
@@ -206,16 +181,11 @@ def main(args):
 if __name__ == '__main__':
     def str2bool(v):
         return v.lower() in ('true', '1')
-    def add_argument_group(name):
-        arg = parser.add_argument_group(name)
-        arg_lists.append(arg)
-        return arg
+
     parser = argparse.ArgumentParser(description='3DDFA inference pipeline')
 
     parser.add_argument('--mpii_path', type=str, help='mpii base dir containig the frontal image')
     parser.add_argument('--output_dir', type=str)     
-
-    
     # ------------------------------------------ useless arguments ------------------------------------------ 
     parser.add_argument('--bbox_init', default='one', type=str,
                         help='one|two: one-step bbox initialization or two-step')
