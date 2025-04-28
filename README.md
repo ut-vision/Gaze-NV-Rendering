@@ -1,4 +1,4 @@
-# NV-Gaze <!-- omit in toc -->
+# Gaze-NV-Rendering <!-- omit in toc -->
 
 Official implementation for **“Learning-by-Novel-View-Synthesis for Full-Face Appearance-based 3D Gaze Estimation”**  
 ([arXiv 2201.07927](https://arxiv.org/abs/2201.07927))
