@@ -57,13 +57,13 @@ Gaze-NV-rendering/
 ```bash
 cd ./3ddfa
 python recon_mpii.py \
-      --mpii_path '../Datasets/MPIIFaceGaze' \
-      --output_dir ../Datasets/mpii_3ddfa
+      --mpii_path "<PATH_TO_MPIIFaceGaze>" \
+      --output_dir "<PATH_TO_RECONSTRUCTED_OBJS>"
 
 ```
 Output (per subject):
 ```yaml
-mpii_3ddfa/
+"<PATH_TO_RECONSTRUCTED_OBJS>"
 └─ p00/
    └─ day01/
       ├─ 0005.obj               # reconstructed mesh
@@ -85,7 +85,7 @@ data:
 2. Run renderer & save outputs into HDF5 file:
 
 ```bash
-SAVE_DIR=./output/mpii
+SAVE_DIR=./output/mpii_nv
 mkdir -p $SAVE_DIR
 python main.py   -save $SAVE_DIR
 python readh5.py --data_dir $SAVE_DIR/full
@@ -99,7 +99,7 @@ python readh5.py --data_dir $SAVE_DIR/full
 
 The synthesized files will be like
 ```yaml
-output/mpii/
+output/mpii_nv/
 └─ full/
    ├─ p00.h5
    ├─ p01.h5
@@ -123,7 +123,7 @@ Inside the h5 files, this person has 1500 x N images, where 1500 is the number o
 
 #### Visualize the rendered images
 ```bash 
-SAVE_DIR=./output/mpii
+SAVE_DIR=./output/mpii_nv
 python readh5.py --data_dir $SAVE_DIR
 ```
 
