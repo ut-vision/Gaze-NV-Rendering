@@ -45,7 +45,12 @@ from utils import load_color, write_obj_with_colors, pitchyaw_to_vector, vector_
 from utils.read_mpii import read_txt_as_dict, read_lm_gc
 from set_renderer import renderer1, renderer2, focal_norm, distance_norm, roi_size, run_render
 from target_rotating import rotate
+
+
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 
 
@@ -328,10 +333,25 @@ def main( i ):
 
 if __name__ == '__main__':
 
-	from args import get_config
 	from utils.path_utils import create_paths
 
-	args, unparsed = get_config()
+	arg_lists = []
+	parser = argparse.ArgumentParser(description='RAM')
+
+
+	def str2bool(v):
+		return v.lower() in ('true', '1')
+		
+
+	parser = argparse.ArgumentParser()
+	## xgaze
+	parser.add_argument('-save', '--save_dir', type=str)
+	parser.add_argument('-real', '--real_dir', type=str, default=None)
+	parser.add_argument('-ablation', '--ablation', type=bool, default=False)
+	parser.add_argument('--group', type=int, help='there are 4 groups of subjects, which group to use (just for parallel rendering)')
+
+	args, unparsed = parser.parse_known_args()
+
 
 	if args.save_dir is None:
 		print('please input the save folder')

@@ -126,3 +126,12 @@ subject0000.h5
 
 ---
 ---
+
+
+
+
+```bash
+conda install -c pytorch pytorch=1.6.0 torchvision=0.7.0 cudatoolkit=10.1
+conda install -c fvcore -c iopath -c conda-forge fvcore iopath
+conda install pytorch3d=0.3.0 -c pytorch3d
+```

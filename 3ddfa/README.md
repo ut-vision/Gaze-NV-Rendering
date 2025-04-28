@@ -37,3 +37,15 @@ obj_path (MPII)
 |     
 └─── p01
 ```
+
+
+
+## run inference
+
+pip install -r requirements.txt
+
+###  Build cython module (just one line for building)
+
+cd utils/cython
+python3 setup.py build_ext -i
+

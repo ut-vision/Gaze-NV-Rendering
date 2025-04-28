@@ -2,12 +2,12 @@
 data:
   mpii:
     raw: /home/jqin/wk/Datasets/MPIIFaceGaze
-    obj: <path>/objs_3ddfa_mpii
+    obj: /home/jqin/wk/Datasets/mpii_3ddfa
   xgaze:
     raw: /media/jqin/disk3/GAZE_datasets/XGaze_RAW_cam00 
     obj: <path>/objs_3ddfa_xgaze
 
-  background_path: <path>/val_256
+  background_path: /home/jqin/wk/Datasets/val_256
 
 supplementary:
   mpii: 

@@ -69,7 +69,7 @@ def main(args):
     input_path = args.files
     output_path = args.output_path
     os.makedirs(output_path, exist_ok=True)
-    
+
     img_list = glob.glob(input_path + '/' + '*.png')
     img_list += glob.glob(input_path + '/' + '*.jpg')
     img_list += glob.glob(input_path + '/' + '*.JPG')
@@ -84,12 +84,6 @@ def main(args):
         # crop_fp = os.path.join(crop_path, filename)
         img_ori = cv2.imread(img_fp)
         if args.dlib_bbox:
-            max_size = max(img_ori.shape[0], img_ori.shape[1])
-            if max_size> 1000:
-                print('image shape before rescale: ',img_ori.shape)
-                img_ori = rescale(img_ori, 1000./max_size, multichannel=True)
-                print('image shape after rescale: ',img_ori.shape)
-                img_ori = (img_ori*255).astype(np.uint8)
             rects = face_detector(img_ori, 1)
         else:
             rects = []
