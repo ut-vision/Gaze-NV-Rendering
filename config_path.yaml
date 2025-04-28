@@ -1,28 +1,24 @@
 ---
 data:
   mpii:
-    raw: /home/jqin/wk/Datasets/MPIIFaceGaze
-    obj: /home/jqin/wk/Datasets/mpii_3ddfa
-  xgaze:
-    raw: /media/jqin/disk3/GAZE_datasets/XGaze_RAW_cam00 
-    obj: <path>/objs_3ddfa_xgaze
+    raw: ../Datasets/MPIIFaceGaze
+    obj: ../Datasets/mpii_3ddfa
 
-  background_path: /home/jqin/wk/Datasets/val_256
+  background_path: ../Datasets/val_256
 
 supplementary:
   mpii: 
     source: supplementary/mpii/source_supply
-    whether_dark: supplementary/mpii/random_bg_ids.txt
+    random_dark_ids: supplementary/mpii/random_dark_ids.txt
     random_lightings_ac: supplementary/mpii/random_lightings_ac.txt
     random_colors: supplementary/mpii/random_colors.txt
     random_bg_ids: supplementary/mpii/random_bg_ids.txt
-    which_ids: supplementary/mpii/which_ids.txt
+    augmentation_ids: supplementary/mpii/augmentation_ids.txt
 
 misc:
-  mpii_face_model: ./data/face_model.yml
-  face_model_path: ./data/face_model.txt
-  dlib_landmark_model: data/shape_predictor_68_face_landmarks.dat
-  openface_path: ./data/OpenFace.txt
+  mpii_face_model: supplementary/face_model.yml
+  dlib_landmark_model: supplementary/shape_predictor_68_face_landmarks.dat
+  openface_path: supplementary/OpenFace.txt
 
 model:
   save_original_headpose: False

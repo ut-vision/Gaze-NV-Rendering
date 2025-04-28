@@ -1,42 +1,27 @@
-import os
-import os.path as osp
-import argparse
-import math
+
 import numpy as np
-import imageio
-import scipy.io
-import glob
-import cv2
-import h5py
-import time
-from tqdm import tqdm
 import torch
-from pytorch3d.structures import Meshes
+# from pytorch3d.structures import Meshes
 # from pytorch3d.vis.plotly_vis import AxisArgs, plot_batch_individually, plot_scene
 from pytorch3d.vis.texture_vis import texturesuv_image_matplotlib
 from pytorch3d.renderer.mesh.rasterizer import RasterizationSettings
 from pytorch3d.renderer import (
 	PerspectiveCameras, 
-	FoVPerspectiveCameras,
-	PointLights, 
+	# FoVPerspectiveCameras,
+	# PointLights, 
 	DirectionalLights, 
-	Materials, 
+	# Materials, 
 	# RasterizationSettings, 
 	MeshRenderer, 
 	MeshRasterizer,  
-	SoftPhongShader,
-	TexturesUV,
-	TexturesVertex,
+	# SoftPhongShader,
+	# TexturesUV,
+	# TexturesVertex,
 )
 
 
-
-from lib.transform import get_rotation, compute_R, rotation_matrix, hR_2_hr, hr_2_hR, lm68_to_50
-from lib.myPytorch3d import SimpleShader, hard_rgb_blend_with_background, BlendParams, mySoftPhongShader
-
-from utils import load_color, write_obj_with_colors, pitchyaw_to_vector, vector_to_pitchyaw, angular_error, draw_gaze, to_h5, add, read_resize_blur
-from utils.read_xgaze import  read_xml,read_csv_as_dict, read_lm_gc
-
+from lib.label_transform import rotation_matrix
+from utils.pytorch3d_helper import SimpleShader, hard_rgb_blend_with_background, BlendParams, mySoftPhongShader
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

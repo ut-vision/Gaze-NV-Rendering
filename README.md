@@ -1,137 +1,144 @@
-# NV-Gaze
+# NV-Gaze <!-- omit in toc -->
 
-This is the official repository for the implementation of creating MPII-NV in [Learning-by-Novel-View-Synthesis for Full-Face Appearance-based 3D Gaze Estimation](https://arxiv.org/abs/2201.07927).
+Official implementation for **“Learning-by-Novel-View-Synthesis for Full-Face Appearance-based 3D Gaze Estimation”**  
+([arXiv 2201.07927](https://arxiv.org/abs/2201.07927))
 
-Check []() for the single-view and multi-view reconstruction of XGaze.
+> This repository recreates the **MPII-NV** synthetic dataset via 3D face reconstruction (3DDFA) and photorealistic novel-view rendering with PyTorch3D.
 
-# The pipeline of Reconstruction and Rendering
-you need to first run the 3D face reconstruction following the [readme](./3ddfa/README.md) in the "3ddfa" subdirectory. After reconstructing the MPII to 3D obj files, you can run the rendering following the below steps.
-Note that the 3DDFA is directly copied from [3DDFA](https://github.com/cleardusk/3DDFA) with some modification. Thanks to their excellent work!
+<!-- Check []() for the multi-view reconstruction and rendering of XGaze. -->
 
-## requirements
-### Directly installation
-make sure the pytorch3d is 0.3.0 version
-```
-pip install -r requirements.txt
-```
-### (optional) Use Singularity
-- For information and installation of Singularity, check []().
-- After installing Singularity, run below line to build the singularity image
-```
-sudo singularity build pt_03.sif singularity.def
-```
-- run the code using 
-```
-SCRIPT="python xx.py"
-singularity exec --nv -bind <> pt_03.sif ${SCRIPT}
-```
-
-
-
-
-# Reconstruction (using 3DDFA, )
-- refer to [my3ddfa readme](my3ddfa/readme.md) and reconstruct the 3D face.
-- refer to `my3ddfa/requirements.txt` for the environment
-
-###  The output obj files are in the following form:
-```
-obj_path (MPII)
-|
-└─── p00
-|     |      
-|     └─── day01
-|     |     |
-|     |     └─── 0005_crop_params.txt
-|     |     |    0005_lm.txt
-|     |     |    0005.obj
-|     |     └───   ... 
-|     └─── day02
-|     
-└─── p01
-```
-
-
-# Render
-## Config
-After reconstruction, modify `./configs/config.yaml`
-```
-mpii:
-    raw: ## directory to mpii
-    obj: ## directory to the obj files from above reconstruction
-```
-
-## Exp1: rotate MPII to large head pose
-- there are supplementary files for MPII (storing indices to filtered source image)
-      - The supplementary files p*.h5 are be in `./supplementary/mpii/source_supply`
-
-### How to rotate?
-- `target_rotating.py` specifies the rotating patterns, and is set in `./configs/config.yaml`
-      - now there are four patterns `['xgaze-train', 'eyediap-cs', 'eyediap-ft', 'gaussian']`, refer to `./configs/config.yaml`
-
-```
-SAVE_DIR=./output/mpii
-rm -r $SAVE_DIR
-mkdir -p $SAVE_DIR
-singularity exec --nv --bind /media/jqin /home/jqin/wk/simgs/pt3d.simg \
-python main_mpii_nv.py -save $SAVE_DIR 
-python readh5.py --data_dir $SAVE_DIR/full/ 
-```
-### Output directories
-
-The synthesized files will be like
-```
-$SAVE_DIR
-|
-└─── components
-|     |      
-|     └─── syn
-|     |     └──── p00.h5
-|     |     └────   ...
-|     └─── dark
-|     └─── cl    
-|     └─── ...
-|     
-└─── full # final version
-      └──── p00.h5
-      └────  ...
-└─── ab1 # ablation 1
-      └────  ...
-└─── ab2 # ablation 1
-      └────  ...
-```
-
-### Structure of created `p00.h5`
-Inside the h5 files, this person has1500 source images, N is the number of new head poses.
-the key is like: 
-```
-subject0000.h5   
-|     
-└─── 'face_gaze': the gaze label [ 1500 * N, 2]
-|      
-└─── 'face_head_pose' : the head pose label [ 1500 * N , 1]
-|     
-└─── 'face_mask': the mask image [ 1500 * N , 224, 224]
-|     
-└─── 'face_mat_norm': the normalization matrix [ 1500 * N , 3, 3]
-|     
-└─── 'face_patch': the face image [ 1500 * N, 224, 224, 3]
-|     
-└─── 'rotation_matrix': the rotation matrix from source to THIS image (only inside each frame)  [ 1500 * N , 3, 3]
-|     
-└─── 'landmarks_norm': the normalized 2D landmarks location (only in the source image)   [1500, 68, 2]
-```
-
-### visualize the synthetic images
-`readh5.py` will load the synthesized `p*.h5` files and output some images in the `$SAVE_DIR/full/samples` for visualization
-
----
----
-
-
-
+## 1. Installation
+- PyTorch3D 0.3.0 are required (due to renderer API changes).
+- The PyTorch3D is recommended to install by Conda.
 
 ```bash
+conda create -n nv_render python==3.7
+conda activate nv_render
+pip install -r requirements.txt
 conda install -c pytorch pytorch=1.6.0 torchvision=0.7.0 cudatoolkit=10.1
 conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 conda install pytorch3d=0.3.0 -c pytorch3d
+
+## Build 3DDFA Cython ops
+cd 3ddfa/utils/cython
+python setup.py build_ext -i 
 ```
+
+
+
+## 2. Dataset Preparation
+
+- Download MPIIFaceGaze by `wget http://datasets.d2.mpi-inf.mpg.de/MPIIGaze/MPIIFaceGaze.zip` and uncompress.
+- Download [Places365](http://places2.csail.mit.edu/). We only use the validation set (`val_256`).
+
+#### MPIIFaceGaze
+
+```bash
+wget http://datasets.d2.mpi-inf.mpg.de/MPIIGaze/MPIIFaceGaze.zip
+unzip MPIIFaceGaze.zip -d <TARGET_DIR>
+```
+#### Places365
+Download the validation split (val_256) from the [official site](http://places2.csail.mit.edu/) .
+
+#### Supplementary assets
+Download the `supplementary/` folder from [Google Drive](https://drive.google.com/drive/folders/1oeS92mgjoysL1UXWFA104ptA_OYWJZ_Y?usp=sharing) and place it at the repo root:
+```
+Gaze-NV-rendering/
+├── supplementary/
+│   ├── mpii/                     # indices & render configs
+│   ├── face_model.yml
+│   ├── OpenFace.txt
+│   ├── mmod_human_face_detector.dat
+│   └── shape_predictor_68_face_landmarks.dat
+└── ...
+```
+
+
+
+## 3.  Pipeline of Reconstruction and NV-Rendering
+### Reconstruction (3DDFA with slight modification)
+
+```bash
+cd ./3ddfa
+python recon_mpii.py \
+      --mpii_path '../Datasets/MPIIFaceGaze' \
+      --output_dir ../Datasets/mpii_3ddfa
+
+```
+Output (per subject):
+```yaml
+mpii_3ddfa/
+└─ p00/
+   └─ day01/
+      ├─ 0005.obj               # reconstructed mesh
+      ├─ 0005_lm.txt            # 3D landmarks
+      └─ 0005_crop_params.txt   # crop transformation matrix
+```
+
+
+###  Render
+1. After reconstruction, modify `./config_path.yaml`:
+```yaml
+data:
+  mpii:
+    raw: "<PATH_TO_MPIIFaceGaze>"
+    obj: "<PATH_TO_RECONSTRUCTED_OBJS>"
+  background_path: "<PATH_TO_Places365/val_256>"
+```
+
+2. Run renderer & save outputs into HDF5 file:
+
+```bash
+SAVE_DIR=./output/mpii
+mkdir -p $SAVE_DIR
+python main.py   -save $SAVE_DIR
+python readh5.py --data_dir $SAVE_DIR/full
+```
+
+
+
+
+
+## 4. Results structure
+
+The synthesized files will be like
+```yaml
+output/mpii/
+└─ full/
+   ├─ p00.h5
+   ├─ p01.h5
+   └─ ...
+```
+
+#### Structure of created `p00.h5`
+Inside the h5 files, this person has 1500 x N images, where 1500 is the number of source images and N is the number of new head poses.
+
+
+| Key               | Shape                            | Description                                          |
+|-------------------|----------------------------------|------------------------------------------------------|
+| face_gaze         | (1500 × N, 2)                    | Gaze angles (pitch, yaw)                             |
+| face_head_pose    | (1500 × N, 3)                    | Head pose (roll, pitch, yaw)                         |
+| face_patch        | (1500 × N, 224 × 224 × 3)        | Rendered face                                        |
+| face_mask         | (1500 × N, 224 × 224)            | Corresponding masks                                  |
+| rotation_matrix   | (1500 × N, 3 × 3)                | Source → target rotation                             |
+| face_mat_norm     | (1500 × N, 3 × 3)                | Camera normalization matrix                          |
+| landmarks_norm    | (1500, 68, 2) *(source only)*    | 2D landmark positions in normalized space            |
+
+
+#### Visualize the rendered images
+```bash 
+SAVE_DIR=./output/mpii
+python readh5.py --data_dir $SAVE_DIR
+```
+
+## Misc.
+- To preserve reproducibility, we stored the source indices for MPIIFaceGaze: `supplementary/mpii/source_supply`
+- We also store the Rendering configs (BG IDs, lighting, colors, etc.): `supplementary/mpii/*`
+- Novel-view patterns are defined in `novel_view.py`: (xgaze-train, eyediap-cs, eyediap-ft, gaussian). Select a pattern via `config_path.yaml`.
+
+
+## Acknowledgements
+We acknowledge the excellent work of [3DDFA](https://github.com/cleardusk/3DDFA) for face reconstruction, and [PyTorch3D](https://github.com/facebookresearch/pytorch3d) for rendering.
+
+## Contact
+If you have any questions, feel free to contact Jiawei Qin at jqin@iis.u-tokyo.ac.jp.

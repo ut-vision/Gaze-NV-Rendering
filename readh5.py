@@ -1,14 +1,12 @@
+import os
 import h5py
-import imageio
 import cv2
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import matplotlib.cm as cm
 from matplotlib import rc
 import matplotlib.font_manager
-import pandas as pd
 import seaborn as sns
 
 sns.set_theme(font_scale=1.5)
@@ -20,13 +18,33 @@ matplotlib.rc('font', **font)
 
 
 
-def rad_to_degree(head_pose):
-	return head_pose * 180/np.pi
+def draw_lm(image, landmarks, color= (0, 0, 255), radius = 20, print_idx=False):
+	i = 0
+	image_out = image.copy()
+	for x,y in landmarks:
+		# Radius of circle
+		# Line thickness of 2 px
+		thickness = -1
+		image_out = cv2.circle(image_out, (int(x), int(y)), radius, color, thickness)
+	
+		if print_idx:
+			image_out = cv2.putText(image_out,
+				text=str(i),
+				org=(int(x), int(y)),
+				fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+				fontScale=2.0,
+				color=color,
+				thickness=2,
+				lineType=cv2.LINE_4)
+		
+		i += 1
+	
+	return image_out
 
 
 def draw_gaze(image_in, pitchyaw, thickness=2, color=(0, 0, 255)):
 	"""Draw gaze angle on given image with a given eye positions."""
-	image_out = image_in
+	image_out = image_in.copy()
 	(h, w) = image_in.shape[:2]
 	length = w / 2.0
 	pos = (int(h / 2.0), int(w / 2.0))
@@ -38,6 +56,11 @@ def draw_gaze(image_in, pitchyaw, thickness=2, color=(0, 0, 255)):
 				   tuple(np.round([pos[0] + dx, pos[1] + dy]).astype(int)), color,
 				   thickness, cv2.LINE_AA, tipLength=0.2)
 	return image_out
+
+
+def rad_to_degree(head_pose):
+	return head_pose * 180/np.pi
+
 
 
 

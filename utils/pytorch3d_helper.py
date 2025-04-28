@@ -1,21 +1,9 @@
 import os
-os.environ["PYOPENGL_PLATFORM"] = "osmesa"
-import argparse
-import math
+# os.environ["PYOPENGL_PLATFORM"] = "osmesa"
 import numpy as np
-import imageio
-import scipy.io
-import glob
-import cv2
-import h5py
-import dlib
-
-
-import matplotlib.path as mplPath
-from scipy.spatial import ConvexHull
 import torch
 # Util function for loading meshes
-from pytorch3d.io import load_objs_as_meshes, load_obj
+# from pytorch3d.io import load_objs_as_meshes, load_obj
 # Data structures and functions for rendering
 from pytorch3d.structures import Meshes
 from pytorch3d.vis.texture_vis import texturesuv_image_matplotlib

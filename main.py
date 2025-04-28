@@ -1,56 +1,50 @@
 import os
 import os.path as osp
 import argparse
-import math
 import numpy as np
-import imageio
 import scipy.io
 import glob
 import cv2
-import matplotlib.pyplot as plt
 import h5py
 import time
 from tqdm import tqdm
 from omegaconf import OmegaConf
-from scipy.optimize import least_squares
 import matplotlib.path as mplPath
 import torch
-from pytorch3d.io import load_objs_as_meshes, load_obj
+from pytorch3d.io import load_obj
 from pytorch3d.structures import Meshes
-# from pytorch3d.vis.plotly_vis import AxisArgs, plot_batch_individually, plot_scene
-from pytorch3d.vis.texture_vis import texturesuv_image_matplotlib
-from pytorch3d.renderer.mesh.rasterizer import RasterizationSettings
 from pytorch3d.renderer import (
-	PerspectiveCameras, 
-	FoVPerspectiveCameras,
-	PointLights, 
-	DirectionalLights, 
-	Materials, 
+	# PerspectiveCameras, 
+	# FoVPerspectiveCameras,
+	# PointLights, 
+	# DirectionalLights, 
+	# Materials, s
 	# RasterizationSettings, 
-	MeshRenderer, 
-	MeshRasterizer,  
-	SoftPhongShader,
-	TexturesUV,
+	# MeshRenderer, 
+	# MeshRasterizer,  
+	# SoftPhongShader,
+	# TexturesUV,
 	TexturesVertex,
 )
-import torch.nn as nn
 
-from lib.normalize import read_image, normalize, normalize_face, load_facemodel, estimateHeadPose, normalize_woimg, resize_landmarks
-from lib.projective_matching import parameters, compute_peri, uvd_2_xyz
-from lib.headpose import get_headpose
-from lib.transform import get_rotation, compute_R, rotation_matrix, hR_2_hr, hr_2_hR, lm68_to_50
-from lib.myPytorch3d import SimpleShader, hard_rgb_blend_with_background, BlendParams, mySoftPhongShader
+from lib.label_transform import mean_eye_mouth
+from lib.gaze.normalize import read_image, normalize, load_facemodel, estimateHeadPose, normalize_woimg, resize_landmarks
+from lib.gaze.gaze_utils import vector_to_pitchyaw, pitchyaw_to_vector
+from lib.gaze.projective_matching import parameters, compute_peri, uvd_2_xyz
+from lib.utils.h5_utils import add, to_h5
+from lib.utils.obj_utils import load_color
 
-from utils import load_color, write_obj_with_colors, pitchyaw_to_vector, vector_to_pitchyaw, angular_error, draw_gaze, to_h5, add, read_resize_blur
 from utils.read_mpii import read_txt_as_dict, read_lm_gc
-from set_renderer import renderer1, renderer2, focal_norm, distance_norm, roi_size, run_render
-from target_rotating import rotate
+from utils.misc import read_resize_blur
+from utils.pytorch3d_helper import BlendParams
 
 
+from set_renderer import renderer1, focal_norm, distance_norm, roi_size, run_render
+
+from novel_view import rotate_mpii
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 
 
@@ -73,35 +67,17 @@ def get_mask_index(lm_gt, vertices, lm_3d, crop_params):
 	return mask_index
 
 
-def get_face_center(landmarks_3d):
-	''' landmarks_3d: (3, 6) -> face_center: (3,1)'''
-	face_center = np.mean(landmarks_3d, axis=1).reshape((3, 1))
-	return face_center
-
-
 
 def main( i ):
 	global SOURCE_INDEX
-
-	if (SOURCE_INDEX + 1 ) % 150 == 0:
+	if (SOURCE_INDEX + 1 ) % 500 == 0:
 		print(f"The SOURCE_INDEX: {SOURCE_INDEX} / {total_source_image}" )
 
 	random_color = random_colors[SOURCE_INDEX]
 	bg_img_idx = random_bg_ids[SOURCE_INDEX]
 	bg_img_paths = sorted(glob.glob(data_cfg.background_path + '/' + '*.jpg'))
 	bg_img = read_resize_blur(bg_img_paths[ bg_img_idx ], roi_size)
-	ac = random_lightings_ac[SOURCE_INDEX]
-	dc = 0.0
-	sc = 0
-	light = DirectionalLights(
-		device=device, 
-		ambient_color=((ac, ac, ac), ), 
-		diffuse_color=((dc, dc, dc), ), 
-		specular_color=((sc, sc, sc),), 
-		direction=[[0.0, 0.0, 1.0]]
-		)
-
-	which_ids_16 = which_ids[SOURCE_INDEX]
+	augmentation_ids_16 = augmentation_ids[SOURCE_INDEX] ## each image has 16 new novel views, this stores the random value to decide how to augment this view
 	SOURCE_INDEX += 1
 	
 	################################# start main ###############################################
@@ -156,7 +132,6 @@ def main( i ):
 	hR = cv2.Rodrigues(hr)[0] # rotation matrix
 	Fc = np.dot(hR, face_model) + ht # (3,6)
 	face_center = np.mean(Fc, axis=1).reshape((3, 1))
-	gaze = gc.reshape(1,3) - face_center.reshape(1,3)
 
 	############################# normalize image ############################
 	norm_list = normalize(img, lm_gt, focal_norm, distance_norm, roi_size, face_center, hr, ht, camera_matrix, gc)
@@ -212,32 +187,21 @@ def main( i ):
 	v_norm = v @ R.T
 	lm_norm = lm @ R.T
 	# move to the normalized distance
-	temp = get_face_center(lm_norm[[36, 39, 42, 45, 31, 35],:].T).reshape(1,3) # input shape should be (3, 6)
+	temp = mean_eye_mouth(lm_norm[[36, 39, 42, 45, 31, 35],:]).reshape(1,3) # input shape should be (6, 3)
 	cam_move = temp * (distance_norm/np.linalg.norm(temp)) - temp
 	v_norm += cam_move.reshape(1,3)
 	lm_norm += cam_move.reshape(1,3)
 
 	v_list = []
 	to_write = {}
-	real_to_write = {}
 
-	save_original_headpose = model_cfg.save_original_headpose
-	if save_original_headpose:
-		print('save original: ', model_cfg.save_original_headpose)
-		v_list.append(v_norm)
-		add(to_write, 'landmarks_norm', resize_landmarks(lm_gt_norm, focal_norm, roi_size))
-		add(to_write, 'face_gaze', vector_to_pitchyaw(-gaze_norm.reshape((1,3))).flatten())
-		add(to_write, 'face_head_pose', hr_norm.astype(np.float32))
-		add(to_write, 'face_mat_norm', R.astype(np.float32))
-		add(to_write, 'rotation_matrix', np.eye(3)) # relative rotation matrix to source image
 
 
 	''' rotate: rotate face and gaze to other cameras , put the new labels into to_write:Dict
 		after rotate, the v_list will contain extra rotated face vertices
 	'''
 	source = [v_norm, hr_norm, lm_norm, gaze_norm]
-	rotate( model_cfg.target_pose,
-			dataname='mpii', 
+	rotate_mpii( model_cfg.target_pose,
 			v_list=v_list, 
 			source=source, 
 			to_write=to_write)
@@ -274,8 +238,7 @@ def main( i ):
 		face_mask224 =  cv2.dilate(face_mask224, kernel, iterations = 3)
 		face_mask224 = cv2.erode(face_mask224, kernel, iterations = 3)
 		add(to_write, 'face_mask', face_mask224)
-		if args.real_dir is not None:
-			add(real_to_write, 'face_mask', face_mask224)
+
 	
 
 	to_write_full = to_write.copy()
@@ -302,7 +265,7 @@ def main( i ):
 
 		add(to_write, 'face_patch', image0)
 
-		aug_idx = which_ids_16[i]
+		aug_idx = augmentation_ids_16[i]
 
 		## full 
 		if aug_idx < 0.1:
@@ -321,46 +284,30 @@ def main( i ):
 
 	"""dict to be written
 		to_write_full: the final version of the dataset
-		real_to_write: simply the normalized image of the cam00.JPG, basically no use
 	"""
 
 	to_h5(to_write_full, osp.join(args.full_dir, person + '.h5') )
-	if args.real_dir is not None:
-		to_h5(real_to_write,  osp.join(args.real_dir, person + '.h5') )
-
-
 
 
 if __name__ == '__main__':
-
-	from utils.path_utils import create_paths
-
-	arg_lists = []
-	parser = argparse.ArgumentParser(description='RAM')
-
-
 	def str2bool(v):
 		return v.lower() in ('true', '1')
-		
 
 	parser = argparse.ArgumentParser()
 	## xgaze
 	parser.add_argument('-save', '--save_dir', type=str)
-	parser.add_argument('-real', '--real_dir', type=str, default=None)
 	parser.add_argument('-ablation', '--ablation', type=bool, default=False)
 	parser.add_argument('--group', type=int, help='there are 4 groups of subjects, which group to use (just for parallel rendering)')
 
 	args, unparsed = parser.parse_known_args()
 
 
-	if args.save_dir is None:
-		print('please input the save folder')
-		exit(0)
+
 	args.full_dir = osp.join(args.save_dir, 'full')
 	os.makedirs(args.full_dir, exist_ok=True)
 
-	## load config
-	cfg = OmegaConf.load('./configs/config.yaml')
+
+	cfg = OmegaConf.load('./config_path.yaml')
 	data_cfg = cfg.data
 	supp_cfg = cfg.supplementary.mpii
 	model_cfg = cfg.model
@@ -373,14 +320,13 @@ if __name__ == '__main__':
 	## misc and supplementary
 	total_source_image = 22500
 	openface = np.loadtxt(misc_cfg.openface_path)
+
 	'''to preserve reproducibility, the random settings of background, color, lighting are all saved in supplementary'''
 	## load random index for lighting,  background color, background image
-	whether_dark = np.loadtxt(supp_cfg.whether_dark)
 	random_lightings_ac = np.loadtxt(supp_cfg.random_lightings_ac)
 	random_colors = np.loadtxt(supp_cfg.random_colors).astype(int)
 	random_bg_ids = np.loadtxt(supp_cfg.random_bg_ids).astype(int)
-	which_ids = np.loadtxt(supp_cfg.which_ids)
-	
+	augmentation_ids = np.loadtxt(supp_cfg.augmentation_ids)
 	SOURCE_INDEX = 0
 
 	## Load the image based on the supplementary files 
@@ -402,7 +348,6 @@ if __name__ == '__main__':
 			num =  f['file_name'].shape[0]
 			print('num of entries: ', num)
 
-			previous_time = time.time()
 			for i in tqdm(range( num )):
 				main(i)
 

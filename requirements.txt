@@ -1,13 +1,12 @@
 opencv-python
-torch==1.6.0 
-torchvision==0.7.0
+
 cmake 
 cython
 dlib
 dataclasses 
 matplotlib 
 h5py
-pytorch3d==0.3.0
+
 imageio 
 scipy 
 glob2 
@@ -15,3 +14,8 @@ scikit-image
 tqdm
 seaborn
 omegaconf
+
+
+# torch==1.6.0 
+# torchvision==0.7.0
+# pytorch3d==0.3.0
