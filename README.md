@@ -27,10 +27,6 @@ python setup.py build_ext -i
 
 
 ## 2. Dataset Preparation
-
-- Download MPIIFaceGaze by `wget http://datasets.d2.mpi-inf.mpg.de/MPIIGaze/MPIIFaceGaze.zip` and uncompress.
-- Download [Places365](http://places2.csail.mit.edu/). We only use the validation set (`val_256`).
-
 #### MPIIFaceGaze
 
 ```bash
