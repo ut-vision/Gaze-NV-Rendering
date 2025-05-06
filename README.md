@@ -5,7 +5,7 @@ Official implementation for **“Learning-by-Novel-View-Synthesis for Full-Face 
 
 > This repository recreates the **MPII-NV** synthetic dataset via 3D face reconstruction (3DDFA) and photorealistic novel-view rendering with PyTorch3D.
 
-<!-- Check []() for the multi-view reconstruction and rendering of XGaze. -->
+:fire: Check [XGaze3D](https://github.com/ut-vision/XGaze3D.git) for the multi-view reconstruction and rendering of XGaze.
 
 ## 1. Installation
 - PyTorch3D 0.3.0 are required (due to renderer API changes).
