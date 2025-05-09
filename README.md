@@ -133,6 +133,7 @@ python readh5.py --data_dir $SAVE_DIR
 - Novel-view patterns are defined in `novel_view.py`: (xgaze-train, eyediap-cs, eyediap-ft, gaussian). Select a pattern via `config_path.yaml`.
 
 
+
 ## Acknowledgements
 We acknowledge the excellent work of [3DDFA](https://github.com/cleardusk/3DDFA) for face reconstruction, and [PyTorch3D](https://github.com/facebookresearch/pytorch3d) for rendering.
 
